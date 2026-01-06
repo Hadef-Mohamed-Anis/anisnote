@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阿尼斯 - Messages</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body, html {
+            margin: 0; padding: 0;
+            background-color: #121212;
+            font-family: 'Poppins', sans-serif;
+            color: white;
+            height: 100%;
+        }
+
+        /* الجزء العلوي: العنوان والأيقونات */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            background-color: #121212;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+            flex-grow: 1;
+            text-align: center;
+            margin-left: 40px; /* لموازنة البحث والإضافة */
+        }
+
+        .header-icons {
+            display: flex;
+            gap: 20px;
+            font-size: 20px;
+        }
+
+        /* أيقونات الإشعارات العلوية */
+        .notifications-row {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px 10px;
+            text-align: center;
+        }
+
+        .notif-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: 30%;
+        }
+
+        .icon-box {
+            width: 55px;
+            height: 55px;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+        }
+
+        .likes-bg { background: linear-gradient(135deg, #ff6b6b, #ee5253); }
+        .followers-bg { background: linear-gradient(135deg, #54a0ff, #2e86de); }
+        .mentions-bg { background: linear-gradient(135deg, #1dd1a1, #10ac84); }
+
+        .notif-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #ccc;
+            white-space: nowrap;
+        }
+
+        /* منطقة الرسائل الفارغة */
+        .empty-messages {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 80px;
+            opacity: 0.6;
+        }
+
+        .empty-illustration {
+            width: 120px;
+            height: 120px;
+            background: url('https://cdn-icons-png.flaticon.com/512/7486/7486744.png'); /* أيقونة تعبيرية */
+            background-size: contain;
+            background-repeat: no-repeat;
+            filter: grayscale(1) invert(1);
+            margin-bottom: 20px;
+        }
+
+        .empty-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* القائمة السفلية (Bottom Navigation) */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #121212;
+            border-top: 1px solid #222;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0;
+            padding-bottom: 25px; /* مساحة لأجهزة الاندرويد الحديثة */
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #888;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            color: #fff;
+        }
+
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        /* زر الإضافة المركزي */
+        .add-btn {
+            background-color: #ff2442;
+            width: 45px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        /* إخفاء شريط التمرير */
+        .sub-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; z-index: 2000; }
+        .bottom-sheet { position: fixed; bottom: -100%; left: 0; width: 100%; background-color: #1e1e1e; border-top-left-radius: 20px; border-top-right-radius: 20px; transition: bottom 0.3s ease-out; z-index: 2001; padding-bottom: 20px; }
+        .bottom-sheet.show { bottom: 0; }
+        .sheet-item { padding: 20px; text-align: center; border-bottom: 1px solid #2c2c2c; font-size: 18px; color: #efefef; cursor: pointer; text-decoration: none; display: block; }
+    
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <h1>Message</h1>
+        <div class="header-icons">
+            <i class="fas fa-search"></i>
+            <i class="fas fa-user-plus"></i>
+        </div>
+    </header>
+
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="bottom-sheet" id="bottomSheet">
+        <a href="text.html" class="sheet-item">Text</a>
+        <a href="image.html" class="sheet-item">Image</a>
+        <a href="video.html" class="sheet-item">Video</a>
+        <div class="sheet-item" id="cancelBtn">Cancel</div>
+    </div>
+
+    <div class="notifications-row">
+        <div class="notif-item">
+            <div class="icon-box likes-bg"><i class="fas fa-heart"></i></div>
+            <span class="notif-label">Likes & Collect</span>
+        </div>
+        <div class="notif-item">
+            <div class="icon-box followers-bg"><i class="fas fa-user"></i></div>
+            <span class="notif-label">New Followers</span>
+        </div>
+        <div class="notif-item">
+            <div class="icon-box mentions-bg"><i class="fas fa-comment-dots"></i></div>
+            <span class="notif-label">Comments & @</span>
+        </div>
+    </div>
+
+    <div class="empty-messages">
+        <div class="empty-illustration"></div>
+        <p class="empty-text">No messages at the moment.</p>
+    </div>
+
+    <footer class="bottom-nav">
+        <a href="home.html" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="message.html" class="nav-item active">
+            <i class="fas fa-comment-dots"></i>
+            <span>Messages</span>
+        </a>
+        <div class="add-btn">
+            <i class="fas fa-plus"></i>
+        </div>
+        <a href="#" class="nav-item">
+            <i class="fas fa-bell"></i>
+            <span>Notifications</span>
+        </a>
+        <a href="me.html" class="nav-item">
+            <i class="fas fa-user"></i>
+            <span>Me</span>
+        </a>
+    </footer>
+
+
+</body>
+<script>
+     // UI Logic
+    const addBtn = document.querySelector('.add-btn');
+    const bottomSheet = document.getElementById('bottomSheet');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    if (addBtn) {
+        addBtn.onclick = () => {
+            modalOverlay.style.display = 'block';
+            setTimeout(() => bottomSheet.classList.add('show'), 10);
+        };
+    }
+
+    const closeSheet = () => {
+        bottomSheet.classList.remove('show');
+        setTimeout(() => modalOverlay.style.display = 'none', 300); 
+    };
+
+    if (cancelBtn) cancelBtn.onclick = closeSheet;
+    if (modalOverlay) modalOverlay.onclick = closeSheet;
+
+    // Tabs logic
+    const mainTabs = document.querySelectorAll('.tab');
+    mainTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            mainTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+        });
+    });
+
+    const subTabs = document.querySelectorAll('.sub-tabs div');
+    subTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            subTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+        });
+    });
+</script>
+</html>

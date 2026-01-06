@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --bg-color: #121214; --card-bg: #1e1e20; --text-main: #ffffff; --text-muted: #8e8e93; --accent-red: #ff2442; --border-color: #2c2c2e; }
+        body { margin: 0; background-color: var(--bg-color); font-family: 'Inter', sans-serif; color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+        .header { padding: 15px; display: flex; align-items: center; justify-content: space-between; }
+        .back-icon { font-size: 24px; cursor: pointer; }
+        
+        /* Media Section */
+        .media-section { padding: 10px 15px; display: flex; gap: 10px; overflow-x: auto; flex-wrap: wrap; }
+        .preview-container { position: relative; width: 100px; height: 100px; }
+        .preview-container img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+        .remove-img { position: absolute; top: -5px; right: -5px; background: var(--accent-red); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        
+        .upload-box { width: 100px; height: 100px; background-color: var(--card-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #333; }
+        .plus-icon { font-size: 30px; color: #48484a; }
+
+        .content-section { padding: 10px 15px; }
+        .title-input { width: 100%; background: transparent; border: none; color: white; font-size: 18px; font-weight: 600; margin-bottom: 15px; outline: none; }
+        .text-input-container { border-left: 2px solid var(--accent-red); padding-left: 10px; }
+        .text-input { width: 100%; background: transparent; border: none; color: var(--text-muted); font-size: 16px; outline: none; resize: none; font-family: inherit; }
+
+        .tags-row { display: flex; gap: 10px; padding: 20px 15px; }
+        .tag-item { background-color: var(--card-bg); padding: 8px 14px; border-radius: 20px; font-size: 13px; color: #ccc; }
+
+        .menu-list { border-top: 1px solid var(--border-color); }
+        .menu-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+        .menu-left { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+        .menu-right { color: var(--text-muted); font-size: 14px; }
+
+        .footer { margin-top: auto; padding: 20px 15px; display: flex; gap: 12px; }
+        /* ابحث عن footer أو الجزء المسؤول عن الأزرار في الأسفل وحدثه كالتالي */
+.footer {
+    position: fixed; /* تثبيت الفوتر */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 15px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: var(--bg-color); /* تأكد من وجود خلفية لكي لا يظهر المحتوى خلفه */
+    z-index: 1000;
+}
+
+/* أضف هامش سفلي لمحتوى الصفحة (body) لمنع تداخل المحتوى مع الفوتر */
+body {
+    padding-bottom: 80px; 
+}
+        .btn-draft { flex: 1; background-color: var(--card-bg); color: white; border: none; padding: 15px; border-radius: 25px; font-weight: 600; }
+        .btn-post { flex: 2; background-color: var(--accent-red); color: white; border: none; padding: 15px; border-radius: 25px; font-weight: 600; }
+        .btn-post:disabled { opacity: 0.5; }
+
+        #file-input { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="back-icon" onclick="history.back()">‹</div>
+        <div style="font-weight: 600;">Create Post</div>
+        <div style="width: 24px;"></div>
+    </div>
+
+    <div class="media-section" id="mediaSection">
+        <label for="file-input" class="upload-box" id="addBox">
+            <span class="plus-icon">+</span>
+        </label>
+        <input type="file" id="file-input" accept="image/*" multiple>
+    </div>
+
+    <div class="content-section">
+        <input type="text" id="postTitle" class="title-input" placeholder="Add a title">
+        <div class="text-input-container">
+            <textarea id="postContent" class="text-input" placeholder="Add text..." rows="4"></textarea>
+        </div>
+    </div>
+
+    <div class="tags-row">
+        <div class="tag-item"># Topic</div>
+        <div class="tag-item">@ User</div>
+    </div>
+
+    <div class="menu-list">
+        <div class="menu-item" onclick="togglePrivacy()">
+            <div class="menu-left"><i id="privIcon" class="fas fa-lock-open"></i> <span id="privText">Public</span></div>
+            <div class="menu-right">›</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <button class="btn-draft">Save draft</button>
+        <button class="btn-post" id="publishBtn">Post note</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuEfa4lBdoarHqUBmpWnVdYEhLYMUW0Wk",
+            authDomain: "rednote-99494.firebaseapp.com",
+            projectId: "rednote-99494",
+            storageBucket: "rednote-99494.firebasestorage.app",
+            messagingSenderId: "381708373042",
+            appId: "1:381708373042:web:3b2b66b9aefba8b98bc02b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dsvxv96q8/image/upload";
+        const CLOUDINARY_PRESET = "Rednote";
+
+        let currentUser = null;
+        let selectedFiles = [];
+        let isPublic = true;
+
+        onAuthStateChanged(auth, user => { if(user) currentUser = user; else window.location.href="index.html"; });
+
+        const fileInput = document.getElementById('file-input');
+        const mediaSection = document.getElementById('mediaSection');
+        const addBox = document.getElementById('addBox');
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                selectedFiles.push(file);
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const div = document.createElement('div');
+                    div.className = 'preview-container';
+                    div.innerHTML = `
+                        <img src="${event.target.result}">
+                        <div class="remove-img" onclick="removeImg(this, ${selectedFiles.length - 1})">×</div>
+                    `;
+                    mediaSection.insertBefore(div, addBox);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        window.removeImg = (el, index) => {
+            el.parentElement.remove();
+            selectedFiles.splice(index, 1);
+        };
+
+        window.togglePrivacy = () => {
+            isPublic = !isPublic;
+            document.getElementById('privText').innerText = isPublic ? "Public" : "Private";
+            document.getElementById('privIcon').className = isPublic ? "fas fa-lock-open" : "fas fa-lock";
+        };
+
+        document.getElementById('publishBtn').onclick = async () => {
+            if (selectedFiles.length === 0) return alert("Please add at least one image");
+            
+            const btn = document.getElementById('publishBtn');
+            btn.disabled = true;
+            btn.innerText = "Uploading...";
+
+            try {
+                const imageUrls = [];
+                for (const file of selectedFiles) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('upload_preset', CLOUDINARY_PRESET);
+                    const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
+                    const data = await res.json();
+                    imageUrls.push(data.secure_url);
+                }
+
+                await addDoc(collection(db, "posts"), {
+                    userId: currentUser.uid,
+                    title: document.getElementById('postTitle').value || "Untitled",
+                    content: document.getElementById('postContent').value,
+                    images: imageUrls,
+                    hasImages: true,
+                    type: "image",
+                    isPublic: isPublic,
+                    likes: 0, views: 0, collects: 0,
+                    createdAt: serverTimestamp()
+                });
+
+                window.location.href = "me.html";
+            } catch (e) {
+                console.error(e);
+                alert("Upload failed");
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阿尼斯 - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* إعدادات الصفحة الأساسية لتشبه شاشة الهاتف */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #121212; /* خلفية داكنة مثل الصورة */
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 400px; /* تحديد عرض الشاشة لتشبه الهاتف */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 60px 20px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* الجزء العلوي: اللوجو والاسم */
+        .logo-section {
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        .logo-text {
+            color: #ff2442; /* اللون الأحمر المميز لـ RedNote */
+            font-size: 60px;
+            font-weight: bold;
+            margin: 0;
+            letter-spacing: -2px;
+        }
+
+        .slogan {
+            font-size: 14px;
+            color: #888;
+            margin-top: 10px;
+            letter-spacing: 2px;
+        }
+
+        /* زر جوجل في منتصف الشاشة */
+        .login-section {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .google-btn {
+            background-color: #ff2442; /* اللون الأحمر للزر */
+            color: white;
+            border: none;
+            border-radius: 50px;
+            width: 90%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            background: white;
+            border-radius: 50%;
+            padding: 2px;
+        }
+
+        /* الجزء السفلي: شروط الاستخدام */
+        .terms-section {
+            display: flex;
+            align-items: flex-start;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.5;
+            padding: 0 10px;
+        }
+
+        /* تخصيص دائرة الاختيار (Checkbox) */
+        .custom-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #555;
+            border-radius: 50%;
+            margin-right: 10px;
+            margin-top: 2px;
+            cursor: pointer;
+            position: relative;
+            outline: none;
+            flex-shrink: 0;
+        }
+
+        .custom-checkbox:checked {
+            background-color: #ff2442;
+            border-color: #ff2442;
+        }
+
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 10px;
+            left: 3px;
+            top: -1px;
+        }
+
+        .terms-text span {
+            color: #999;
+            text-decoration: underline;
+        }
+
+        /* تصميم الإشعار المدمج (Toast) */
+        #customToast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1000;
+            bottom: 30px;
+            font-size: 14px;
+            border-left: 4px solid #ff2442;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: visibility 0s, opacity 0.5s linear;
+            opacity: 0;
+        }
+
+        #customToast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="logo-section">
+            <h1 class="logo-text">阿尼斯</h1>
+            <div class="slogan">YOUR LIFESTYLE GUIDE</div>
+        </div>
+
+        <div class="login-section">
+            <button id="googleLoginBtn" class="google-btn">
+                <img src="https://images.sftcdn.net/images/t_app-icon-m/p/bf8edc0a-9b29-11e6-9719-00163ec9f5fa/664638320/google-mobile-app-logo" alt="Google icon">
+                Log In with Google
+            </button>
+        </div>
+
+        <div class="terms-section">
+            <input type="checkbox" class="custom-checkbox" id="termsCheckbox">
+            <label for="termsCheckbox" class="terms-text">
+                I have read and agreed to the following policies: 
+                <span>Terms</span>, <span>Privacy Policy</span>
+            </label>
+        </div>
+
+        <div id="customToast">Please agree to the terms first!</div>
+
+    </div>
+
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAuEfa4lBdoarHqUBmpWnVdYEhLYMUW0Wk",
+        authDomain: "rednote-99494.firebaseapp.com",
+        projectId: "rednote-99494",
+        storageBucket: "rednote-99494.firebasestorage.app",
+        messagingSenderId: "381708373042",
+        appId: "1:381708373042:web:3b2b66b9aefba8b98bc02b",
+        measurementId: "G-BTNJG7Q1VB"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    const loginBtn = document.getElementById('googleLoginBtn');
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    const toast = document.getElementById('customToast');
+
+    function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("show");
+        setTimeout(() => {
+            toast.classList.remove("show");
+        }, 3000);
+    }
+
+    // --- المنطق الجديد لتسجيل الدخول التلقائي ---
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // التحقق مما إذا كان المستخدم قادماً من صفحة الإعدادات (تسجيل خروج)
+            const referredFromSettings = document.referrer.includes('settings.html');
+            
+            // إذا لم يكن قادماً من تسجيل الخروج، قم بتوجيهه تلقائياً
+            if (!referredFromSettings) {
+                window.location.href = "home.html";
+            }
+        }
+    });
+
+    loginBtn.addEventListener('click', async () => {
+        if (!termsCheckbox.checked) {
+            showToast("Please agree to the terms first!");
+            return;
+        }
+
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+
+            await setDoc(doc(db, "users", user.uid), {
+                uid: user.uid,
+                displayName: user.displayName,
+                email: user.email,
+                photoURL: user.photoURL,
+                lastLogin: new Date()
+            }, { merge: true });
+
+            window.location.href = "home.html";
+            
+        } catch (error) {
+            console.error("Error during login:", error);
+            showToast("Login failed: " + error.message);
+        }
+    });
+</script>
+
+</body>
+</html>

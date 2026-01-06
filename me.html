@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body, html { margin: 0; padding: 0; background-color: #121212; font-family: 'Poppins', sans-serif; color: white; }
+
+        .profile-header {
+            position: relative; height: 280px; background-color: #333; background-size: cover;
+            background-position: center; padding: 20px; display: flex; flex-direction: column;
+            justify-content: flex-end; transition: background-image 0.3s ease;
+        }
+        .header-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.1), #121212); z-index: 1; }
+        .header-content { position: relative; z-index: 2; }
+        .header-icons { position: absolute; top: 20px; width: calc(100% - 40px); z-index: 3; display: flex; justify-content: space-between; font-size: 20px; color: white; }
+
+        .user-info-main { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 10px; }
+        .avatar { width: 85px; height: 85px; border-radius: 50%; border: 2px solid #121212; background-color: #333; object-fit: cover; }
+        
+        .user-text { margin-top: 5px; }
+        .user-text h2 { margin: 0; font-size: 22px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .rednote-id { font-size: 11px; color: #ccc; margin-top: 4px; }
+        .user-bio { font-size: 13px; color: #eee; margin-top: 8px; line-height: 1.4; max-width: 90%; }
+        .user-tags { display: flex; gap: 8px; margin-top: 8px; }
+        .info-tag { background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px; font-size: 10px; display: flex; align-items: center; gap: 4px; color: #ddd; }
+
+        .stats-bar { display: flex; gap: 20px; padding: 10px 20px; align-items: center; }
+        .stat-item { text-align: left; display: flex; gap: 5px; align-items: baseline;}
+        .stat-value { font-weight: 700; font-size: 16px; }
+        .stat-label { font-size: 13px; color: #999; }
+
+        .action-buttons { display: flex; gap: 10px; padding: 10px 20px; }
+        .edit-btn, .settings-btn { background: #333; border: 1px solid #444; color: white; padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; flex: 1; text-align: center; }
+        
+        /* New Follow & Message Buttons */
+        .follow-action-btn {
+            background: #ff2442; border: none; color: white;
+            padding: 8px 20px; border-radius: 20px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            flex: 1; text-align: center; display: none;
+        }
+        .follow-action-btn.following {
+            background: #333; border: 1px solid #444; color: #ccc;
+        }
+        .message-action-btn {
+            background: #333; border: 1px solid #444; color: white;
+            padding: 8px; width: 40px; border-radius: 20px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            display: none; align-items: center; justify-content: center;
+        }
+
+        .profile-tabs { display: flex; justify-content: space-around; margin-top: 15px; border-bottom: 1px solid #222; }
+        .p-tab { padding: 10px 0; color: #888; font-weight: 600; position: relative; cursor: pointer;}
+        .p-tab.active { color: white; }
+        .p-tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: #ff2442; }
+
+        .filter-tabs { display: flex; gap: 15px; padding: 15px 20px; font-size: 14px; color: #888; }
+        .f-tab.active { color: white; font-weight: bold; }
+
+        /* Grid & Cards */
+        .notes-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; padding-bottom: 100px; }
+        .note-card { background: #1e1e1e; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #2c2c2c; }
+        .note-content-preview { background: #2a2a2a; color: #ddd; height: 150px; position: relative; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; font-weight: 600; overflow: hidden; }
+        .note-content-preview img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .play-icon-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 28px; color: white; opacity: 0.9; text-shadow: 0 2px 4px rgba(0,0,0,0.6); pointer-events: none;
+        }
+
+        .note-info { padding: 8px; font-size: 11px; background: #1e1e1e; }
+        .note-footer { display: flex; justify-content: space-between; color: #888; margin-top: 5px;}
+        .private-badge { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 10px; font-size: 10px; color: white; z-index: 5; backdrop-filter: blur(2px); }
+
+        /* Navigation & Modal */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background-color: #121212; border-top: 1px solid #222; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; padding-bottom: 25px; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #888; font-size: 12px; font-weight: 600; text-decoration: none; }
+        .nav-item.active { color: #fff; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; }
+        .add-btn { background-color: #ff2442; width: 45px; height: 32px; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; cursor: pointer;}
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; z-index: 2000; }
+        .bottom-sheet { position: fixed; bottom: -100%; left: 0; width: 100%; background-color: #1e1e1e; border-top-left-radius: 20px; border-top-right-radius: 20px; transition: bottom 0.3s ease-out; z-index: 2001; padding-bottom: 20px; }
+        .bottom-sheet.show { bottom: 0; }
+        .sheet-item { padding: 20px; text-align: center; border-bottom: 1px solid #2c2c2c; font-size: 18px; color: #efefef; cursor: pointer; text-decoration: none; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="profile-header" id="headerBg">
+        <div class="header-overlay"></div>
+        <div class="header-icons">
+            <i class="fas fa-arrow-left" onclick="history.back()" style="cursor: pointer; display: none;" id="backIcon"></i>
+            <i class="fas fa-bars" id="menuIcon"></i>
+            <div><i class="fas fa-qrcode" style="margin-right: 15px;"></i><i class="fas fa-share"></i></div>
+        </div>
+        
+        <div class="header-content">
+            <div class="user-info-main">
+                <div class="avatar-container">
+                    <img id="userAvatar" src="https://via.placeholder.com/80" class="avatar" alt="User">
+                </div>
+                <div class="user-text">
+                    <h2 id="userName">User</h2>
+                    <div class="rednote-id">ID: <span id="userId">...</span></div>
+                </div>
+            </div>
+            
+            <div class="user-bio" id="userBio"></div>
+            
+            <div class="user-tags" id="userTags"></div>
+        </div>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-item"><span class="stat-value" id="followingCount">0</span><span class="stat-label">Following</span></div>
+        <div class="stat-item"><span class="stat-value" id="followersCount">0</span><span class="stat-label">Followers</span></div>
+        <div class="stat-item"><span class="stat-value" id="totalLikes">0</span><span class="stat-label">Likes&Col</span></div>
+    </div>
+
+    <div class="action-buttons" id="actionButtons">
+        <button class="edit-btn" id="editProfileBtn" onclick="window.location.href='edit_profile.html'">Edit Profile</button>
+        <button class="settings-btn" id="settingsBtn" onclick="window.location.href='settings.html';"><i class="fas fa-cog"></i></button>
+        
+        <button class="follow-action-btn" id="mainFollowBtn">Follow</button>
+        <button class="message-action-btn" id="msgBtn"><i class="far fa-comment-dots"></i></button>
+    </div>
+
+    <div class="profile-tabs" id="profileTabs">
+        <div class="p-tab active">Notes</div>
+        <div class="p-tab" id="savesTab">Saves</div>
+        <div class="p-tab" id="likesTab"><i class="fas fa-lock" style="font-size: 10px;"></i> Likes</div>
+    </div>
+
+    <div class="filter-tabs" id="filterContainer">
+        <div class="f-tab active" onclick="filterContent('all')">Public <span id="publicCount">0</span></div>
+        <div class="f-tab" onclick="filterContent('private')" id="privateTab"><i class="fas fa-lock"></i> Private <span id="privateCount">0</span></div>
+    </div>
+
+    <div class="notes-grid" id="notesGrid"></div>
+
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="bottom-sheet" id="bottomSheet">
+        <a href="text.html" class="sheet-item">Text</a>
+        <a href="image.html" class="sheet-item">Image</a>
+        <a href="video.html" class="sheet-item">Video</a>
+        <div class="sheet-item" id="cancelBtn">Cancel</div>
+    </div>
+
+    <footer class="bottom-nav">
+        <a href="home.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="message.html" class="nav-item"><i class="fas fa-comment-dots"></i><span>Messages</span></a>
+        <div class="add-btn"><i class="fas fa-plus"></i></div>
+        <a href="#" class="nav-item"><i class="fas fa-bell"></i><span>Notifications</span></a>
+        <a href="me.html" class="nav-item active"><i class="fas fa-user"></i><span>Me</span></a>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy, doc, getDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuEfa4lBdoarHqUBmpWnVdYEhLYMUW0Wk",
+            authDomain: "rednote-99494.firebaseapp.com",
+            projectId: "rednote-99494",
+            storageBucket: "rednote-99494.firebasestorage.app",
+            messagingSenderId: "381708373042",
+            appId: "1:381708373042:web:3b2b66b9aefba8b98bc02b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let allUserContent = [];
+        let currentUser = null;
+        let profileUid = null;
+        let isOwner = false;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const paramUid = urlParams.get('uid');
+                
+                if (paramUid && paramUid !== user.uid) {
+                    profileUid = paramUid;
+                    isOwner = false;
+                } else {
+                    profileUid = user.uid;
+                    isOwner = true;
+                }
+
+                await setupProfilePage();
+                fetchUserContent(profileUid);
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        async function setupProfilePage() {
+            if (isOwner) {
+                document.getElementById('editProfileBtn').style.display = 'block';
+                document.getElementById('settingsBtn').style.display = 'block';
+                document.getElementById('mainFollowBtn').style.display = 'none';
+                document.getElementById('msgBtn').style.display = 'none';
+                
+                document.getElementById('privateTab').style.display = 'block';
+                document.getElementById('savesTab').style.display = 'block';
+                document.getElementById('likesTab').style.display = 'block';
+
+                document.getElementById('menuIcon').style.display = 'block';
+                document.getElementById('backIcon').style.display = 'none';
+            } else {
+                document.getElementById('editProfileBtn').style.display = 'none';
+                document.getElementById('settingsBtn').style.display = 'none';
+                document.getElementById('mainFollowBtn').style.display = 'block';
+                document.getElementById('msgBtn').style.display = 'flex'; // Show Message Btn
+                
+                document.getElementById('privateTab').style.display = 'none';
+                document.getElementById('savesTab').style.display = 'none'; // Hide Saves
+                document.getElementById('likesTab').style.display = 'none'; // Hide Likes
+
+                document.getElementById('menuIcon').style.display = 'none';
+                document.getElementById('backIcon').style.display = 'block';
+                
+                checkFollowStatus();
+                document.getElementById('mainFollowBtn').onclick = toggleFollow;
+            }
+
+            const userDoc = await getDoc(doc(db, "users", profileUid));
+            if(userDoc.exists()) {
+                const data = userDoc.data();
+                document.getElementById('userId').innerText = profileUid.substring(0, 10);
+                document.getElementById('userName').innerText = data.displayName || data.username || "User";
+                if(data.photoURL) document.getElementById('userAvatar').src = data.photoURL;
+                
+                document.getElementById('followingCount').innerText = data.followingCount || 0;
+                document.getElementById('followersCount').innerText = data.followersCount || 0;
+
+                const defaultCover = "https://images.unsplash.com/photo-1557683316-973673baf926?w=800&auto=format&fit=crop&q=60"; 
+                const bgUrl = data.backgroundImage || defaultCover;
+                document.getElementById('headerBg').style.backgroundImage = `url('${bgUrl}')`;
+                
+                if(data.bio) document.getElementById('userBio').innerText = data.bio;
+
+                const tagsContainer = document.getElementById('userTags');
+                tagsContainer.innerHTML = '';
+                if(data.gender && data.gender !== 'Private') {
+                    const icon = data.gender === 'Male' ? '<i class="fas fa-mars" style="color:#64b5f6"></i>' : '<i class="fas fa-venus" style="color:#f06292"></i>';
+                    tagsContainer.innerHTML += `<div class="info-tag">${icon}</div>`;
+                }
+                if(data.birthday) {
+                    const birthDate = new Date(data.birthday);
+                    const ageDiffMs = Date.now() - birthDate.getTime();
+                    const ageDate = new Date(ageDiffMs); 
+                    const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+                    tagsContainer.innerHTML += `<div class="info-tag">${age} yo</div>`;
+                }
+            }
+        }
+
+        async function checkFollowStatus() {
+            const followRef = doc(db, "users", currentUser.uid, "following", profileUid);
+            const snap = await getDoc(followRef);
+            updateFollowBtnUI(snap.exists());
+        }
+
+        function updateFollowBtnUI(isFollowing) {
+            const btn = document.getElementById('mainFollowBtn');
+            if (isFollowing) {
+                btn.innerText = "Following";
+                btn.classList.add('following');
+            } else {
+                btn.innerText = "Follow";
+                btn.classList.remove('following');
+            }
+        }
+
+        async function toggleFollow() {
+            const btn = document.getElementById('mainFollowBtn');
+            const isFollowing = btn.classList.contains('following');
+            
+            updateFollowBtnUI(!isFollowing);
+
+            const batch = writeBatch(db);
+            const currentUserRef = doc(db, "users", currentUser.uid);
+            const targetUserRef = doc(db, "users", profileUid);
+            const followingRef = doc(db, "users", currentUser.uid, "following", profileUid);
+            const followerRef = doc(db, "users", profileUid, "followers", currentUser.uid);
+
+            try {
+                if (isFollowing) {
+                    batch.delete(followingRef);
+                    batch.delete(followerRef);
+                    batch.update(currentUserRef, { followingCount: increment(-1) });
+                    batch.update(targetUserRef, { followersCount: increment(-1) });
+                } else {
+                    batch.set(followingRef, { timestamp: serverTimestamp() });
+                    batch.set(followerRef, { timestamp: serverTimestamp() });
+                    batch.set(currentUserRef, { followingCount: increment(1) }, { merge: true });
+                    batch.set(targetUserRef, { followersCount: increment(1) }, { merge: true });
+                }
+                await batch.commit();
+            } catch (e) {
+                console.error("Follow error:", e);
+                updateFollowBtnUI(isFollowing); 
+            }
+        }
+
+        async function fetchUserContent(uid) {
+            allUserContent = [];
+            
+            const postsQuery = query(collection(db, "posts"), where("userId", "==", uid), orderBy("createdAt", "desc"));
+            const reelsQuery = query(collection(db, "reels"), where("userId", "==", uid), orderBy("createdAt", "desc"));
+
+            const [postsSnap, reelsSnap] = await Promise.all([
+                getDocs(postsQuery),
+                getDocs(reelsQuery)
+            ]);
+
+            let totalLikes = 0;
+
+            postsSnap.forEach((doc) => {
+                const d = doc.data();
+                totalLikes += (d.likes || 0);
+                allUserContent.push({ id: doc.id, type: 'post', ...d, sortDate: d.createdAt?.toDate() || new Date() });
+            });
+
+            reelsSnap.forEach((doc) => {
+                const d = doc.data();
+                totalLikes += (d.likes || 0);
+                allUserContent.push({ id: doc.id, type: 'reel', ...d, sortDate: d.createdAt?.toDate() || new Date() });
+            });
+
+            allUserContent.sort((a, b) => b.sortDate - a.sortDate);
+
+            document.getElementById('totalLikes').innerText = totalLikes;
+            updateContentUI();
+        }
+
+        function updateContentUI() {
+            const pubContent = allUserContent.filter(p => p.isPublic);
+            
+            document.getElementById('publicCount').innerText = pubContent.length;
+            
+            if(isOwner) {
+                const privContent = allUserContent.filter(p => !p.isPublic);
+                document.getElementById('privateCount').innerText = privContent.length;
+            }
+            
+            renderGrid(pubContent);
+        }
+
+        window.filterContent = function(type) {
+            document.querySelectorAll('.f-tab').forEach(t => t.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            let filtered = [];
+            
+            if (type === 'all') {
+                filtered = allUserContent.filter(p => p.isPublic);
+            } else if (type === 'private') {
+                if(isOwner) {
+                    filtered = allUserContent.filter(p => !p.isPublic);
+                } else {
+                    filtered = [];
+                }
+            }
+            
+            renderGrid(filtered);
+        }
+
+        function renderGrid(items) {
+            const grid = document.getElementById('notesGrid');
+            grid.innerHTML = '';
+            
+            if(items.length === 0) {
+                grid.innerHTML = '<p style="grid-column:1/3; text-align:center; color:#666; padding:20px;">No content here.</p>';
+                return;
+            }
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'note-card';
+                
+                card.onclick = () => { 
+                    if(item.type === 'reel') {
+                        window.location.href = `publication_video.html?id=${item.id}`;
+                    } else {
+                        window.location.href = `publication_text.html?id=${item.id}`;
+                    }
+                };
+
+                let mediaContent = '';
+                
+                if (item.type === 'reel') {
+                    const thumb = item.youtubeId 
+                        ? `https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg` 
+                        : 'https://via.placeholder.com/300x400';
+                    mediaContent = `
+                        <div class="note-content-preview" style="padding:0;">
+                            <img src="${thumb}">
+                            <i class="fas fa-play play-icon-overlay"></i>
+                        </div>`;
+                } else {
+                    const hasImages = item.images && item.images.length > 0;
+                    mediaContent = hasImages 
+                        ? `<div class="note-content-preview" style="padding:0;">
+                                <img src="${item.images[0]}">
+                        </div>`
+                        : `<div class="note-content-preview" style="background:white; color:#333;">${item.content ? item.content.substring(0, 50) + '...' : ''}</div>`;
+                }
+
+                card.innerHTML = `
+                    ${!item.isPublic ? '<div class="private-badge"><i class="fas fa-lock"></i> Private</div>' : ''}
+                    ${mediaContent}
+                    <div class="note-info">
+                        <div style="font-weight:600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color:#eee;">
+                            ${item.title || (item.type === 'reel' ? 'Reel' : 'Note')}
+                        </div>
+                        <div class="note-footer">
+                            <span><i class="far fa-heart"></i> ${item.likes || 0}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        const addBtn = document.querySelector('.add-btn');
+        const bottomSheet = document.getElementById('bottomSheet');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        if (addBtn) {
+            addBtn.onclick = () => {
+                modalOverlay.style.display = 'block';
+                setTimeout(() => bottomSheet.classList.add('show'), 10);
+            };
+        }
+
+        const closeSheet = () => {
+            bottomSheet.classList.remove('show');
+            setTimeout(() => modalOverlay.style.display = 'none', 300); 
+        };
+
+        if (cancelBtn) cancelBtn.onclick = closeSheet;
+        if (modalOverlay) modalOverlay.onclick = closeSheet;
+
+        const mainTabs = document.querySelectorAll('.tab');
+        mainTabs.forEach(tab => tab.addEventListener('click', () => {
+            mainTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+        }));
+    </script>
+</body>
+</html>

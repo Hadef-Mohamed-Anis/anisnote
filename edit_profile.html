@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body, html { margin: 0; padding: 0; background-color: #121212; font-family: 'Poppins', sans-serif; color: white; }
+        
+        /* Navbar */
+        .nav-bar {
+            display: flex; justify-content: space-between; align-items: center; padding: 15px 20px;
+            background-color: #121212; border-bottom: 1px solid #222;
+        }
+        .nav-title { font-weight: 600; font-size: 16px; }
+        .save-btn { color: #ff2442; font-weight: 600; cursor: pointer; font-size: 14px; }
+
+        /* Avatar Section */
+        .avatar-section {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 30px 0;
+        }
+        .avatar-wrapper { position: relative; cursor: pointer; }
+        .avatar-img {
+            width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
+            border: 2px solid #333; opacity: 0.8;
+        }
+        .camera-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 24px; color: white; pointer-events: none;
+        }
+
+        /* Form List */
+        .settings-list { padding: 0 20px; }
+        .list-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 0; border-bottom: 1px solid #222; cursor: pointer;
+        }
+        .list-label { font-size: 15px; font-weight: 500; color: #fff; }
+        .list-right { display: flex; align-items: center; gap: 10px; color: #888; font-size: 14px; }
+        .arrow-icon { font-size: 14px; color: #555; }
+        
+        /* Inputs styling within list */
+        .input-plain {
+            background: transparent; border: none; color: #888; text-align: right;
+            font-family: inherit; font-size: 14px; outline: none; width: 150px;
+        }
+        .bg-preview {
+            width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #333;
+        }
+        
+        /* Modal for text editing (Name/Bio) */
+        .edit-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #121212; z-index: 200; display: none; flex-direction: column;
+        }
+        .modal-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+        .modal-content { padding: 20px; }
+        .modal-input {
+            width: 100%; background: #1e1e1e; border: none; color: white; padding: 15px;
+            border-radius: 8px; font-size: 16px; outline: none; box-sizing: border-box;
+        }
+
+        /* Custom Gender Selection Modal */
+        .gender-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 300; display: none; align-items: flex-end;
+        }
+        .gender-sheet {
+            width: 100%; background: #1e1e1e; border-top-left-radius: 20px; border-top-right-radius: 20px;
+            padding: 20px 0; animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .gender-option {
+            padding: 15px 0; text-align: center; font-size: 16px; color: white; cursor: pointer;
+            border-bottom: 1px solid #2c2c2c;
+        }
+        .gender-option:last-child { border-bottom: none; color: #ff2442; font-weight: 600; margin-top: 10px;}
+
+        /* Custom Toast Notification */
+        .toast {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(30, 30, 30, 0.95); color: white; padding: 15px 30px;
+            border-radius: 8px; z-index: 1000; display: none; text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 14px;
+        }
+        .toast i { display: block; font-size: 24px; margin-bottom: 10px; color: #ff2442; }
+
+        /* Loader */
+        #loadingOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 999; }
+
+    </style>
+</head>
+<body>
+
+    <div id="loadingOverlay"><i class="fas fa-spinner fa-spin fa-2x" style="color: #ff2442;"></i></div>
+
+    <div id="toast" class="toast">
+        <i class="fas fa-info-circle"></i>
+        <span id="toastMsg">Notification</span>
+    </div>
+
+    <div class="nav-bar">
+        <i class="fas fa-arrow-left" onclick="history.back()" style="cursor: pointer;"></i>
+        <span class="nav-title">Edit profile</span>
+        <span class="save-btn" id="mainSaveBtn">Save</span>
+    </div>
+
+    <div class="avatar-section">
+        <div class="avatar-wrapper" onclick="document.getElementById('avatarUpload').click()">
+            <img id="displayAvatar" src="https://via.placeholder.com/100" class="avatar-img">
+            <i class="fas fa-camera camera-overlay"></i>
+        </div>
+        <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
+    </div>
+
+    <div class="settings-list">
+        
+        <div class="list-item" onclick="openTextModal('name')">
+            <span class="list-label">Name</span>
+            <div class="list-right">
+                <span id="displayNameVal">User</span>
+                <i class="fas fa-chevron-right arrow-icon"></i>
+            </div>
+        </div>
+
+        <div class="list-item">
+            <span class="list-label">Rednote ID</span>
+            <div class="list-right">
+                <span id="displayIdVal">...</span>
+                <i class="fas fa-copy" style="font-size: 12px; margin-left:5px;"></i>
+            </div>
+        </div>
+
+        <div class="list-item" onclick="document.getElementById('bgUpload').click()">
+            <span class="list-label">Background</span>
+            <div class="list-right">
+                <img id="displayBg" src="" class="bg-preview" alt="bg">
+                <i class="fas fa-chevron-right arrow-icon"></i>
+            </div>
+            <input type="file" id="bgUpload" accept="image/*" style="display: none;">
+        </div>
+
+        <div class="list-item" onclick="openTextModal('bio')">
+            <span class="list-label">Bio</span>
+            <div class="list-right">
+                <span id="displayBioVal" style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Add a bio</span>
+                <i class="fas fa-chevron-right arrow-icon"></i>
+            </div>
+        </div>
+
+        <div class="list-item" onclick="openGenderModal()">
+            <span class="list-label">Gender</span>
+            <div class="list-right">
+                <span id="genderDisplay">Male</span>
+                <i class="fas fa-chevron-right arrow-icon"></i>
+            </div>
+        </div>
+
+        <div class="list-item">
+            <span class="list-label">Birthday</span>
+            <div class="list-right">
+                <input type="text" id="birthdayInput" class="input-plain" placeholder="YYYY-MM-DD" maxlength="10">
+                <i class="fas fa-chevron-right arrow-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="edit-modal" id="textModal">
+        <div class="modal-header">
+            <span onclick="closeTextModal()" style="cursor: pointer;">Cancel</span>
+            <span class="nav-title" id="modalTitle">Edit</span>
+            <span class="save-btn" onclick="saveTextModal()">Done</span>
+        </div>
+        <div class="modal-content">
+            <input type="text" id="modalInput" class="modal-input" autocomplete="off">
+            <p style="color:#666; font-size:12px; margin-top:10px;">This will be visible on your profile.</p>
+        </div>
+    </div>
+
+    <div class="gender-modal-overlay" id="genderModal" onclick="closeGenderModal(event)">
+        <div class="gender-sheet">
+            <div class="gender-option" onclick="selectGender('Male')">Male</div>
+            <div class="gender-option" onclick="selectGender('Female')">Female</div>
+            <div class="gender-option" onclick="selectGender('Private')">Private</div>
+            <div class="gender-option" onclick="closeGenderModal(null)">Cancel</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuEfa4lBdoarHqUBmpWnVdYEhLYMUW0Wk",
+            authDomain: "rednote-99494.firebaseapp.com",
+            projectId: "rednote-99494",
+            storageBucket: "rednote-99494.firebasestorage.app",
+            messagingSenderId: "381708373042",
+            appId: "1:381708373042:web:3b2b66b9aefba8b98bc02b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dsvxv96q8/image/upload";
+        const CLOUDINARY_UPLOAD_PRESET = "Rednote";
+
+        let currentUser = null;
+        let pendingChanges = {}; 
+        let currentModalField = ''; 
+
+        // --- Custom Toast Function ---
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const msgSpan = document.getElementById('toastMsg');
+            const icon = toast.querySelector('i');
+
+            msgSpan.innerText = message;
+            icon.className = isError ? "fas fa-exclamation-circle" : "fas fa-check-circle";
+            icon.style.color = isError ? "#ff2442" : "#00e676";
+
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2500);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                await loadUserData();
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        async function loadUserData() {
+            const docRef = doc(db, "users", currentUser.uid);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                
+                document.getElementById('displayAvatar').src = data.photoURL || 'https://via.placeholder.com/100';
+                document.getElementById('displayNameVal').innerText = data.displayName || "User";
+                document.getElementById('displayIdVal').innerText = data.rednoteId || currentUser.uid.substring(0,10);
+                document.getElementById('displayBg').src = data.backgroundImage || 'https://via.placeholder.com/40';
+                document.getElementById('displayBioVal').innerText = data.bio || "Add a bio";
+                
+                // Gender
+                document.getElementById('genderDisplay').innerText = data.gender || "Male";
+                
+                // Birthday
+                document.getElementById('birthdayInput').value = data.birthday || "";
+            }
+        }
+
+        // --- Image Handling ---
+        async function uploadImage(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
+            const data = await res.json();
+            return data.secure_url;
+        }
+
+        document.getElementById('avatarUpload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            try {
+                const url = await uploadImage(file);
+                document.getElementById('displayAvatar').src = url;
+                pendingChanges.photoURL = url; 
+            } catch(err) {
+                showToast("Upload failed", true);
+            }
+            document.getElementById('loadingOverlay').style.display = 'none';
+        });
+
+        document.getElementById('bgUpload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            try {
+                const url = await uploadImage(file);
+                document.getElementById('displayBg').src = url;
+                pendingChanges.backgroundImage = url;
+            } catch(err) {
+                showToast("Upload failed", true);
+            }
+            document.getElementById('loadingOverlay').style.display = 'none';
+        });
+
+        // --- Gender Modal Handling ---
+        window.openGenderModal = () => {
+            document.getElementById('genderModal').style.display = 'flex';
+        };
+        window.closeGenderModal = (e) => {
+            if (e === null || e.target.id === 'genderModal') {
+                document.getElementById('genderModal').style.display = 'none';
+            }
+        };
+        window.selectGender = (val) => {
+            document.getElementById('genderDisplay').innerText = val;
+            pendingChanges.gender = val;
+            document.getElementById('genderModal').style.display = 'none';
+        };
+
+        // --- Text/Modal Logic ---
+        window.openTextModal = (field) => {
+            currentModalField = field;
+            const modal = document.getElementById('textModal');
+            const input = document.getElementById('modalInput');
+            const title = document.getElementById('modalTitle');
+            
+            modal.style.display = 'flex';
+            
+            if(field === 'name') {
+                title.innerText = "Edit Name";
+                input.value = document.getElementById('displayNameVal').innerText;
+                input.maxLength = 20;
+            } else if (field === 'bio') {
+                title.innerText = "Edit Bio";
+                input.value = document.getElementById('displayBioVal').innerText === "Add a bio" ? "" : document.getElementById('displayBioVal').innerText;
+                input.maxLength = 80;
+            }
+            input.focus();
+        };
+
+        window.closeTextModal = () => {
+            document.getElementById('textModal').style.display = 'none';
+        };
+
+        window.saveTextModal = () => {
+            const val = document.getElementById('modalInput').value.trim();
+            if(currentModalField === 'name') {
+                if(val) {
+                    document.getElementById('displayNameVal').innerText = val;
+                    pendingChanges.displayName = val;
+                }
+            } else if (currentModalField === 'bio') {
+                document.getElementById('displayBioVal').innerText = val || "Add a bio";
+                pendingChanges.bio = val;
+            }
+            closeTextModal();
+        };
+
+        // --- Birthday Validation ---
+        function isValidDate(dateString) {
+            // Regex check: YYYY-MM-DD
+            const regex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!regex.test(dateString)) return false;
+
+            // Logic check
+            const parts = dateString.split("-");
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const day = parseInt(parts[2], 10);
+            
+            const currentYear = new Date().getFullYear();
+
+            // Check Year (Reasonable range)
+            if (year < 1900 || year > currentYear) return false;
+
+            // Check Month
+            if (month < 1 || month > 12) return false;
+
+            // Check Day
+            const daysInMonth = new Date(year, month, 0).getDate();
+            if (day < 1 || day > daysInMonth) return false;
+
+            return true;
+        }
+
+        // --- Main Save ---
+        document.getElementById('mainSaveBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('mainSaveBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "Saving...";
+            
+            const birthdayVal = document.getElementById('birthdayInput').value.trim();
+            
+            // Validate Birthday only if entered
+            if(birthdayVal !== "") {
+                if (!isValidDate(birthdayVal)) {
+                    showToast("Invalid Date. Use YYYY-MM-DD", true);
+                    btn.innerText = originalText;
+                    return;
+                }
+                pendingChanges.birthday = birthdayVal;
+            }
+
+            try {
+                // 1. Update Auth Profile
+                if(pendingChanges.displayName || pendingChanges.photoURL) {
+                    await updateProfile(currentUser, {
+                        displayName: pendingChanges.displayName || currentUser.displayName,
+                        photoURL: pendingChanges.photoURL || currentUser.photoURL
+                    });
+                }
+
+                // 2. Update Firestore
+                const userRef = doc(db, "users", currentUser.uid);
+                await updateDoc(userRef, pendingChanges);
+
+                showToast("Profile Updated!");
+                setTimeout(() => history.back(), 1500); 
+            } catch (e) {
+                console.error(e);
+                showToast("Error updating profile.", true);
+            }
+            btn.innerText = originalText;
+        });
+
+    </script>
+</body>
+</html>
